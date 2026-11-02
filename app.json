@@ -52,6 +52,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "./plugins/withKotlinVersion",
       "expo-router",
       [
         "expo-camera",
@@ -68,8 +69,7 @@
             "compileSdkVersion": 35,
             "targetSdkVersion": 35,
             "minSdkVersion": 24,
-            "buildToolsVersion": "35.0.0",
-            "kotlinVersion": "1.9.25"
+            "buildToolsVersion": "35.0.0"
           }
         }
       ]
