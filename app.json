@@ -1,0 +1,66 @@
+{
+  "expo": {
+    "name": "Ultracam Mobile",
+    "slug": "ultracam-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "ultracam",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.ultracam.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Ultracam Mobile diffuse la caméra vers Ultracam Studio.",
+        "NSMicrophoneUsageDescription": "Ultracam Mobile diffuse le microphone vers Ultracam Studio.",
+        "NSLocalNetworkUsageDescription": "Ultracam Mobile recherche les studios Ultracam sur votre réseau local.",
+        "NSBonjourServices": ["_ultracam._tcp"],
+        "NSAppTransportSecurity": { "NSAllowsLocalNetworking": true }
+      }
+    },
+    "android": {
+      "package": "app.ultracam.mobile",
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "backgroundColor": "#10131a"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.ACCESS_WIFI_STATE",
+        "android.permission.CHANGE_WIFI_MULTICAST_STATE",
+        "android.permission.INTERNET"
+      ]
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Ultracam Mobile diffuse la caméra vers Ultracam Studio.",
+          "microphonePermission": "Ultracam Mobile diffuse le microphone vers Ultracam Studio.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "minSdkVersion": 24,
+            "buildToolsVersion": "35.0.0"
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "891880850774",
+    "project_id": "ultracam-app",
+    "storage_bucket": "ultracam-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:891880850774:android:5335dd3f38847c0dca42f7",
+        "android_client_info": {
+          "package_name": "app.ultracam.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAC7Yd0cRPm5Pb_V4l-d6Tl1GaSBTKF_YI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
