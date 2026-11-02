@@ -4,22 +4,35 @@ const { withDangerousMod, withGradleProperties } = require('expo/config-plugins'
 
 const KOTLIN_VERSION = '1.9.25';
 
-const CATALOGS = [
-  ['node_modules/@react-native/gradle-plugin', 'gradle/libs.versions.toml'],
-  ['node_modules/react-native', 'gradle/libs.versions.toml'],
-];
+const CATALOG = 'gradle/libs.versions.toml';
 
-const KOTLIN_ENTRY = /^kotlin\s*=\s*".*"\s*$/gm;
+const KOTLIN_ENTRY = /^kotlin\s*=\s*".*"\s*$/m;
 
-function patchCatalog(filePath) {
+function packageRoot(packageName, fromDir) {
+  try {
+    return path.dirname(require.resolve(`${packageName}/package.json`, { paths: [fromDir] }));
+  } catch {
+    const direct = path.join(fromDir, 'node_modules', packageName);
+    return fs.existsSync(direct) ? direct : null;
+  }
+}
+
+function patchCatalog(packageName, fromDir) {
+  const root = packageRoot(packageName, fromDir);
+  if (!root) {
+    throw new Error(`[withKotlinVersion] cannot resolve ${packageName} from ${fromDir}`);
+  }
+  const filePath = path.join(root, CATALOG);
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`[withKotlinVersion] missing ${filePath}`);
+  }
   const contents = fs.readFileSync(filePath, 'utf8');
-  KOTLIN_ENTRY.lastIndex = 0;
-  if (!KOTLIN_ENTRY.test(contents)) {
+  const match = contents.match(KOTLIN_ENTRY);
+  if (!match) {
     throw new Error(`[withKotlinVersion] no kotlin entry in ${filePath}`);
   }
-  const patched = contents.replace(KOTLIN_ENTRY, `kotlin = "${KOTLIN_VERSION}"`);
-  if (patched !== contents) {
-    fs.writeFileSync(filePath, patched);
+  if (match[0].trim() !== `kotlin = "${KOTLIN_VERSION}"`) {
+    fs.writeFileSync(filePath, contents.replace(KOTLIN_ENTRY, `kotlin = "${KOTLIN_VERSION}"`));
   }
 }
 
@@ -37,14 +50,12 @@ module.exports = function withKotlinVersion(config) {
     'android',
     (config) => {
       const projectRoot = config.modRequest.projectRoot;
-      for (const [packageName, relativePath] of CATALOGS) {
-        const packageRoot = path.join(projectRoot, 'node_modules', packageName);
-        const filePath = path.join(packageRoot, relativePath);
-        if (!fs.existsSync(filePath)) {
-          throw new Error(`[withKotlinVersion] missing ${packageName}/${relativePath}`);
-        }
-        patchCatalog(filePath);
+      const reactNativeRoot = packageRoot('react-native', projectRoot);
+      if (!reactNativeRoot) {
+        throw new Error(`[withKotlinVersion] cannot resolve react-native from ${projectRoot}`);
       }
+      patchCatalog('@react-native/gradle-plugin', reactNativeRoot);
+      patchCatalog('react-native', projectRoot);
       return config;
     },
   ]);
