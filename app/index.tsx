@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Image, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Badge, Body, Button, Card, Label, Screen, Subtitle, Title } from '../src/components/ui';
@@ -68,8 +68,17 @@ export default function HomeScreen(): React.ReactElement {
   return (
     <Screen style={{ paddingTop: insets.top + spacing.md }}>
       <View style={styles.scroll}>
-        <Title>Ultracam Mobile</Title>
-        <Body dim>Diffusez votre caméra vers un Studio Ultracam de votre réseau.</Body>
+        <View style={styles.header}>
+          <Image
+            source={require('../assets/icon.png')}
+            style={styles.logo}
+            accessibilityLabel="Logo Ultracam Mobile"
+          />
+          <View style={{ flex: 1 }}>
+            <Title>Ultracam Mobile</Title>
+            <Body dim>Diffusez votre caméra vers un Studio Ultracam de votre réseau.</Body>
+          </View>
+        </View>
 
         <Card style={{ marginTop: spacing.md }}>
           <View style={styles.statusRow}>
@@ -179,6 +188,8 @@ function phaseLabel(phase: string): string {
 
 const styles = StyleSheet.create({
   scroll: { paddingBottom: spacing.xl },
+  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  logo: { width: 56, height: 56, borderRadius: 14 },
   statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   studioRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   studioName: { color: colors.text, fontSize: 16, fontWeight: '600' },

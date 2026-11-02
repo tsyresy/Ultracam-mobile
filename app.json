@@ -7,6 +7,12 @@
     "scheme": "ultracam",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#10131a"
+    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -29,6 +35,7 @@
       "package": "app.ultracam.mobile",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#10131a"
       },
       "permissions": [
@@ -41,7 +48,8 @@
       ]
     },
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
