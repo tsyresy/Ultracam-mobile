@@ -7,7 +7,9 @@
     "scheme": "ultracam",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.ultracam.mobile",
@@ -15,8 +17,12 @@
         "NSCameraUsageDescription": "Ultracam Mobile diffuse la caméra vers Ultracam Studio.",
         "NSMicrophoneUsageDescription": "Ultracam Mobile diffuse le microphone vers Ultracam Studio.",
         "NSLocalNetworkUsageDescription": "Ultracam Mobile recherche les studios Ultracam sur votre réseau local.",
-        "NSBonjourServices": ["_ultracam._tcp"],
-        "NSAppTransportSecurity": { "NSAllowsLocalNetworking": true }
+        "NSBonjourServices": [
+          "_ultracam._tcp"
+        ],
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
       }
     },
     "android": {
@@ -61,6 +67,15 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "b24f0cf4-4133-4077-94b5-9e3c53376ed7"
+      }
+    },
+    "owner": "tsyresy"
   }
 }
