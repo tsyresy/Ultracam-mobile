@@ -1,0 +1,14 @@
+const fs = require('fs');
+const vm = require('vm');
+const ts = require('typescript');
+const assert = require('node:assert/strict');
+const code = ts.transpileModule(fs.readFileSync('src/pairing.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
+const sandbox = {exports:{}, URL:class {constructor(){throw Error('React Native URL is incomplete');}}};
+vm.runInNewContext(code,sandbox);
+const parse = sandbox.exports.parsePairing;
+const token='A'.repeat(64);
+const endpoint=`ws://192.168.1.20:49721/stream?token=${token}`;
+assert.equal(parse(' '+endpoint+' '),endpoint);
+assert.equal(parse(`wss://studio.local:443/stream?token=${token}`),`wss://studio.local:443/stream?token=${token}`);
+for(const value of ['',`http://192.168.1.20:49721/stream?token=${token}`,endpoint.replace(token,'123'),endpoint.replace('49721','65536'),endpoint.replace('192.168.1.20','999.1.1.1'),endpoint+'&extra=true',endpoint.replace('/stream','/other'),endpoint.replace('192.168.1.20','user@host')]) assert.throws(()=>parse(value));
+console.log('PASS pairing: valid LAN/TLS endpoints, whitespace, malformed/short tokens, invalid ports/hosts/routes, credentials, unsupported URL polyfill');

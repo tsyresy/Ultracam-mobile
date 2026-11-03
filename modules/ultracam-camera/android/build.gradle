@@ -1,0 +1,19 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+group = 'app.ultracam.camera'
+version = '0.1.0'
+def expoModulesCorePlugin = new File(project(':expo-modules-core').projectDir.absolutePath, 'ExpoModulesCorePlugin.gradle')
+apply from: expoModulesCorePlugin
+applyKotlinExpoModulesCorePlugin()
+useCoreDependencies()
+android {
+ namespace 'app.ultracam.camera'
+ compileSdkVersion 35
+ defaultConfig { minSdkVersion 24; targetSdkVersion 35 }
+}
+dependencies {
+ implementation 'androidx.camera:camera-camera2:1.4.1'
+ implementation 'androidx.camera:camera-lifecycle:1.4.1'
+ implementation 'androidx.camera:camera-view:1.4.1'
+ implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+}

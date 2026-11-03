@@ -1,151 +1,36 @@
-# Ultracam Mobile (Expo — iOS + Android)
+# Ultracam Remote Mobile — version 0.1.0
 
-Application hybride qui transforme le téléphone en **caméra distante** pour
-`../UltraCamStudio`. Elle capture, encode, et diffuse vers le Studio sur un
-WebSocket binaire. Implémentation originale : elle parle uniquement le protocole
-ouvert **Ultracam v1** (voir `src/protocol/constants.ts`, miroir de
-`../UltraCamStudio/src/protocol.ts`).
+Nouvelle application Expo/React Native avec module caméra natif Kotlin (Android CameraX) et Swift (iOS AVFoundation). Aucun dépôt Git n’est nécessaire pour la compilation. Vos images et les identifiants Firebase `app.ultracam.mobile` sont conservés.
 
----
+## Utilisation Android
 
-## Démarrage
+Installer `release/Ultracam-Remote-Mobile.apk`, ouvrir l’application et autoriser la caméra. Sur le même réseau privé que le PC, scanner le QR affiché par Ultracam Studio Pro. Le flux doit ensuite apparaître sur le Studio.
 
-```bash
-cd UtracamMobile
-npm install
+L’aperçu, le changement avant/arrière, la torche et le zoom dépendent des capacités du téléphone. La cadence sélectionnée (10/15/24/30 fps) est une cible maximale ; l’application saute des images si le réseau est saturé. Capture native visant 720p, JPEG configurable, orientation native de la caméra. Le Studio propose une rotation si nécessaire.
 
-npm start                 # Metro / Expo Go
-npm run android           # build natif + lancement (expo run:android)
-npm run ios               # build natif + lancement (expo run:ios)
+Le lien d’appairage est sensible et le transport local n’est pas chiffré. Aucune transmission à Firebase n’est implémentée ; ses fichiers de configuration sont conservés pour la suite.
+
+## Construire Android
+
+Pré-requis : Node.js 20, JDK 17 ou 21, SDK Android 35, NDK 26.1.10909125 et accès aux registres de dépendances.
+
+```sh
+npm ci
+npx expo prebuild --platform android --no-install
+cd android
+./gradlew assembleRelease --no-daemon
 ```
 
-> `expo run:*` nécessite Android SDK / Xcode. Absents sur la machine de build :
-> les écrans, l'appairage, la découverte et les réglages Pro ont été validés par
-> typecheck + test d'intégration, mais pas par un run natif.
+Expo SDK 52 / React Native 0.76.5 sont utilisés pour correspondre à la chaîne Android disponible sur cette machine. Le fichier `package-lock.json` verrouille les dépendances. Une migration vers un SDK plus récent sera nécessaire avant une publication sur les stores et devra être testée séparément.
 
-Si le module natif `UltracamEncoder` n'est pas compilé (cas d'Expo Go), l'app
-bascule en **aperçu seul** : la caméra s'affiche, tous les écrans fonctionnent,
-seul « Démarrer la diffusion » est désactivé.
+La clé de signature propre à Ultracam se trouve dans `signing/ultracam-release.p12`, ses paramètres dans `signing/release.properties`. Ces fichiers privés sont nécessaires aux futures mises à jour : en faire une sauvegarde sûre, ne pas les distribuer avec l’APK. La version release n’utilise pas la clé Android debug. Ne pas remplacer la clé après distribution.
 
----
+## iOS
 
-## Écrans (`app/`, expo-router)
+Le module Swift est fourni, mais **n’a pas été compilé ni testé** sur Ubuntu. Il faut macOS, Xcode, CocoaPods et une signature Apple pour produire et installer une version iOS. Exécuter `npx expo prebuild --platform ios` puis compiler depuis Xcode. Expo Go ne charge pas ce module natif ; utiliser une compilation dédiée.
 
-| route | rôle |
-|---|---|
-| `index.tsx` | accueil : liste des Studios découverts (mDNS + ajout manuel d'IP), état de connexion |
-| `connect.tsx` | connexion manuelle à un hôte/port, choix sécurisé/clair |
-| `pair.tsx` | saisie du code d'appairage à 6 chiffres, mémorisation du jeton |
-| `stream.tsx` | aperçu caméra (`expo-camera`), démarrage/arrêt de la diffusion |
-| `pro.tsx` | **Réglages Pro** : 26 réglages en 5 sections (Optique, Image, Encodage vidéo, Audio, Presets), appliqués en direct |
+## État de cette version
 
----
+Cette livraison transmet la vidéo uniquement. Audio, transport USB direct, contrôles manuels complets de la caméra, effets IA, H.264/HEVC et modes 4K ne sont pas implémentés. Les trois plateformes doivent encore faire l’objet d’essais réels de caméra et de reconnexion. Le téléphone n’a pas été testé matériellement dans cet environnement.
 
-## Réglages Pro (parité avec le desktop)
-
-Les mêmes 26 réglages que le Studio, éditables **des deux côtés** :
-
-| section | réglages |
-|---|---|
-| Image | `lens`, `zoom`, `torch`, `focus`, `whiteBalance`, `exposureCompensation` |
-| Couleurs | `brightness`, `contrast`, `saturation`, `gamma`, `sharpness`, `hue`, `preset` |
-| Traitement | `hdr`, `stabilization`, `mirror`, `beauty`, `cleanFrame` |
-| Vidéo | `resolution.width`, `resolution.height`, `fps`, `bitrateKbps`, `codec` |
-| Audio | `audioEnabled`, `audioCodec`, `audioBitrateKbps` |
-
-Flux de synchronisation :
-
-- **Téléphone → Studio** : `settings-state` (état complet) puis `settings`
-  (patch) à chaque changement.
-- **Studio → Téléphone** : message `settings`, fusionné localement par
-  `SignalConnection.onMessage` puis appliqué à l'aperçu (`facing`) et à
-  l'encodeur natif (`setOption`).
-- Le `lens` est partagé : `'back'` (défaut) ou `'front'`, directement mappé sur
-  `CameraView facing`.
-
-Les réglages sont persistés (AsyncStorage) et republiés à la reconnexion.
-
----
-
-## Architecture `src/`
-
-```
-protocol/constants.ts   PROTOCOL_VERSION, SignalType, MediaFrameType, ProSettings
-net/connection.ts       SignalConnection : hello → welcome → authenticate → authenticated
-net/media.ts            MediaChannel : trames binaires [streamId|type|flags|0|payload]
-services/discovery.ts   StudioDiscovery (react-native-zeroconf + ajout manuel)
-services/identity.ts    deviceId stable (expo-crypto + expo-device)
-services/preferences.ts jetons + réglages persistés (AsyncStorage)
-services/streaming.ts   contrôleur singleton : connexion + encodeur + réglages
-services/capture.ts     contrat CaptureSink / EncoderConfig / registerEncoderProvider
-services/encoderBridge.ts pont vers NativeModules.UltracamEncoder (base64 → Uint8Array)
-hooks/useStreaming.ts   accès React au contrôleur (abonnement, état)
-components/             ui.tsx (Screen/Card/Button/…), SliderField.tsx
-theme.ts                palette et espacements
-```
-
-### Découverte
-
-- mDNS `_ultracam._tcp` via `react-native-zeroconf`.
-- Repli : ajout manuel `hôte:port` depuis `index.tsx` (utile si le mDNS est
-  filtré par le réseau).
-
-### Transport
-
-- Signal : `ws(s)://<studio>:47900/signal`, sous-protocole `ultracam.signal.v1`,
-  JSON texte. Délai de poignée de main : 12 s.
-- Média : `ws(s)://<studio>:47900/media?deviceId=…`, sous-protocole
-  `ultracam.media.v1`. L'autorisation est héritée de la session `/signal`
-  (5 minutes) : il faut s'authentifier **avant** d'ouvrir `/media`.
-
----
-
-## Contrat de l'encodeur natif
-
-`NativeModules.UltracamEncoder` doit exposer :
-
-```ts
-configure(config: EncoderConfig): Promise<EncoderCapabilities>
-start(): Promise<void>
-stop(): Promise<void>
-setOption(name: string, value: string | number | boolean): void
-```
-
-et émettre, sous le nom `ultracam`, des événements `{ event, payload }` de type
-`config` (SPS/PPS ou config audio), `frame` (base64 + `keyframe` + `ptsMicros`) et
-`stats`. Détails et notes d'implémentation Android (MediaCodec) / iOS
-(VideoToolbox) : `modules/ultracam-encoder/README.md`.
-
-`registerNativeEncoder()` (`src/services/encoderBridge.ts`) détecte le module au
-démarrage et n'enregistre le fournisseur que s'il est présent.
-
----
-
-## Tests
-
-```bash
-# Typecheck (nécessite un node_modules installé)
-npm run typecheck
-
-# Intégration réseau contre un Studio réel
-PAIRING_CODE=<code> node scripts/test-connection.js
-#   → MOBILE_TEST_OK
-```
-
-`scripts/test-connection.js` compile `src/net` + `src/protocol` avec esbuild puis
-exécute la séquence complète : connexion, appairage, `stream-start`, envoi de
-config + keyframe + delta, `settings`. Sortie attendue :
-
-```
-[mobile] Studio : <nom>
-[mobile] Authentifié auprès du Studio
-[mobile] média envoyé { bytes: 36, frames: 3 }
-MOBILE_TEST_OK
-```
-
----
-
-## Types
-
-`types/react-native-zeroconf.d.ts` déclare l'API utilisée de
-`react-native-zeroconf` 0.13 (le paquet n'en fournit pas).
+Vérification TypeScript : `npm run typecheck`. Les sources de l’application sont `App.tsx` et `modules/ultracam-camera/`. Le dossier `analysis/decompiled` contient l’analyse de référence ; il n’est ni importé ni inclus dans l’application.

@@ -1,90 +1,10 @@
 {
-  "expo": {
-    "name": "Ultracam Mobile",
-    "slug": "ultracam-mobile",
-    "version": "0.1.0",
-    "orientation": "portrait",
-    "scheme": "ultracam",
-    "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
-    "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#10131a"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "app.ultracam.mobile",
-      "infoPlist": {
-        "NSCameraUsageDescription": "Ultracam Mobile diffuse la caméra vers Ultracam Studio.",
-        "NSMicrophoneUsageDescription": "Ultracam Mobile diffuse le microphone vers Ultracam Studio.",
-        "NSLocalNetworkUsageDescription": "Ultracam Mobile recherche les studios Ultracam sur votre réseau local.",
-        "NSBonjourServices": [
-          "_ultracam._tcp"
-        ],
-        "NSAppTransportSecurity": {
-          "NSAllowsLocalNetworking": true
-        }
-      }
-    },
-    "android": {
-      "package": "app.ultracam.mobile",
-      "googleServicesFile": "./google-services.json",
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#10131a"
-      },
-      "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.ACCESS_NETWORK_STATE",
-        "android.permission.ACCESS_WIFI_STATE",
-        "android.permission.CHANGE_WIFI_MULTICAST_STATE",
-        "android.permission.INTERNET"
-      ]
-    },
-    "web": {
-      "bundler": "metro",
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "./plugins/withKotlinVersion",
-      "expo-router",
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Ultracam Mobile diffuse la caméra vers Ultracam Studio.",
-          "microphonePermission": "Ultracam Mobile diffuse le microphone vers Ultracam Studio.",
-          "recordAudioAndroid": true
-        }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "compileSdkVersion": 35,
-            "targetSdkVersion": 35,
-            "minSdkVersion": 24,
-            "buildToolsVersion": "35.0.0"
-          }
-        }
-      ]
-    ],
-    "experiments": {
-      "typedRoutes": true
-    },
-    "extra": {
-      "router": {
-        "origin": false
-      },
-      "eas": {
-        "projectId": "b24f0cf4-4133-4077-94b5-9e3c53376ed7"
-      }
-    },
-    "owner": "tsyresy"
-  }
+ "expo": {
+  "name":"Ultracam Remote Mobile","slug":"ultracam-remote-mobile","version":"0.1.0","orientation":"default","scheme":"ultracam","userInterfaceStyle":"dark",
+  "icon":"./Ultracam-Mobile-logo.png","splash":{"image":"./Ultracam Mobile splash.png","resizeMode":"contain","backgroundColor":"#10131a"},
+  "newArchEnabled":false,
+  "ios":{"supportsTablet":true,"bundleIdentifier":"app.ultracam.mobile","googleServicesFile":"./GoogleService-Info.plist","infoPlist":{"NSLocalNetworkUsageDescription":"Relier votre caméra à Ultracam Studio sur votre réseau local.","NSAppTransportSecurity":{"NSAllowsLocalNetworking":true,"NSAllowsArbitraryLoads":true}}},
+  "android":{"package":"app.ultracam.mobile","googleServicesFile":"./google-services.json","permissions":["CAMERA","INTERNET","ACCESS_NETWORK_STATE"],"adaptiveIcon":{"foregroundImage":"./Ultracam-Mobile-logo.png","backgroundColor":"#10131a"}},
+  "plugins":[["expo-camera",{"cameraPermission":"Autoriser Ultracam à transmettre la caméra à votre ordinateur.","recordAudioAndroid":false}],"./plugins/withLocalNetwork.js"]
+ }
 }

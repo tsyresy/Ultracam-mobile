@@ -2,8 +2,13 @@ node_modules/
 .expo/
 dist/
 web-build/
-android/
-ios/
+/android/
+/ios/
+build/
+.gradle/
+/analysis/
+/release/
+/signing/
 *.jks
 *.p8
 *.p12
