@@ -12,3 +12,12 @@ assert.equal(parse(' '+endpoint+' '),endpoint);
 assert.equal(parse(`wss://studio.local:443/stream?token=${token}`),`wss://studio.local:443/stream?token=${token}`);
 for(const value of ['',`http://192.168.1.20:49721/stream?token=${token}`,endpoint.replace(token,'123'),endpoint.replace('49721','65536'),endpoint.replace('192.168.1.20','999.1.1.1'),endpoint+'&extra=true',endpoint.replace('/stream','/other'),endpoint.replace('192.168.1.20','user@host')]) assert.throws(()=>parse(value));
 console.log('PASS pairing: valid LAN/TLS endpoints, whitespace, malformed/short tokens, invalid ports/hosts/routes, credentials, unsupported URL polyfill');
+
+const forTransport = sandbox.exports.pairingForTransport;
+assert.equal(forTransport(endpoint,'wifi'),endpoint);
+assert.equal(forTransport(endpoint,'usb'),`ws://127.0.0.1:49721/stream?token=${token}`);
+assert.equal(forTransport(`ws://127.0.0.1:49721/stream?token=${token}`,'usb'),`ws://127.0.0.1:49721/stream?token=${token}`);
+assert.throws(()=>forTransport(`wss://studio.local:443/stream?token=${token}`,'usb'));
+assert.throws(()=>forTransport(endpoint.replace(':49721',':49722'),'usb'));
+assert.throws(()=>forTransport(endpoint.replace(token,'bad'),'usb'));
+console.log('PASS USB: loopback conversion preserves token, unchanged Wi-Fi, TLS/port/invalid token rejected');

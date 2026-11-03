@@ -6,7 +6,7 @@ module.exports = config => {
  });
  config = withAppBuildGradle(config, config => {
   let source = config.modResults.contents;
-  if (!source.includes('signing/release.properties')) {
+  if (process.env.EAS_BUILD !== 'true' && !source.includes('signing/release.properties')) {
    source = source.replace('    signingConfigs {', `    signingConfigs {
         release {
             def credentials = new Properties()
@@ -22,7 +22,7 @@ module.exports = config => {
   return config;
  });
  return withGradleProperties(config, config => {
-  const values = {'android.targetSdkVersion':'35','android.kotlinVersion':'1.9.24','org.gradle.workers.max':'2','reactNativeArchitectures':'arm64-v8a,armeabi-v7a'};
+  const values = {'android.targetSdkVersion':'35','android.kotlinVersion':'1.9.24','org.gradle.workers.max':'2','reactNativeArchitectures':'arm64-v8a,armeabi-v7a','expo.gif.enabled':'false','expo.webp.enabled':'false','expo.webp.animated':'false'};
   for (const [key,value] of Object.entries(values)) {
    config.modResults = config.modResults.filter(item => item.key !== key);
    config.modResults.push({type:'property',key,value});

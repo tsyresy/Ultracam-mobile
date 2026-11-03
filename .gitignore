@@ -16,3 +16,4 @@ build/
 *.mobileprovision
 *.orig.*
 *.log
+/credentials.json

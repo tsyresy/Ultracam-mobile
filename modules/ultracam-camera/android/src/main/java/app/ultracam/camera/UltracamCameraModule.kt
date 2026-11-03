@@ -5,7 +5,7 @@ class UltracamCameraModule : Module() {
  override fun definition() = ModuleDefinition {
   Name("UltracamCamera")
   View(UltracamCameraView::class) {
-   Events("onStatus")
+   Events("onStatus", "onControls")
    Prop("url") { view: UltracamCameraView, value: String -> view.setEndpoint(value) }
    Prop("facing") { view: UltracamCameraView, value: String -> view.setFacing(value) }
    Prop("torch") { view: UltracamCameraView, value: Boolean -> view.setTorch(value) }

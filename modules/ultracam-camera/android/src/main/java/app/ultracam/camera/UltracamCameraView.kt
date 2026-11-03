@@ -22,6 +22,14 @@ import java.util.concurrent.TimeUnit
 class UltracamCameraView(context: Context, appContext: AppContext) : ExpoView(context, appContext) {
  private val preview = PreviewView(context)
  private val onStatus by EventDispatcher()
+ private val onControls by EventDispatcher()
+ private class EncoderBuffers {
+  var pixels: java.nio.ByteBuffer? = null
+  var row = ByteArray(0)
+  var bitmap: Bitmap? = null
+  val jpeg = ByteArrayOutputStream()
+ }
+ private val encoderBuffers = ThreadLocal.withInitial { EncoderBuffers() }
  private val client = OkHttpClient.Builder().pingInterval(10,TimeUnit.SECONDS).build()
  private var worker = Executors.newSingleThreadExecutor()
  private var provider: ProcessCameraProvider? = null
@@ -39,18 +47,18 @@ class UltracamCameraView(context: Context, appContext: AppContext) : ExpoView(co
  private var lastFrame = 0L
  private var lastStatus = 0L
  private var frameCount = 0
- private var generation = 0
+ @Volatile private var generation = 0
  init { preview.scaleType = PreviewView.ScaleType.FIT_CENTER; addView(preview) }
  override fun onLayout(changed: Boolean,l:Int,t:Int,r:Int,b:Int) { preview.layout(0,0,r-l,b-t) }
- private fun status(state:String,message:String) { post { onStatus(mapOf("state" to state,"message" to message,"frames" to frameCount)) } }
+ private fun status(state:String,message:String) { val current=generation; post { if(current==generation && isAttachedToWindow) onStatus(mapOf("state" to state,"message" to message,"frames" to frameCount)) } }
  override fun onAttachedToWindow() { super.onAttachedToWindow(); if(worker.isShutdown) worker=Executors.newSingleThreadExecutor(); bindCamera(); if(endpoint.isNotEmpty()) connect() }
  override fun onDetachedFromWindow() {
   generation++; ready=false; socket?.close(1000,"View closed");socket=null
-  analysis?.let { provider?.unbind(it) };previewUseCase?.let { provider?.unbind(it) };worker.shutdown()
+  analysis?.let { provider?.unbind(it) };previewUseCase?.let { provider?.unbind(it) };worker.execute { encoderBuffers.get()?.bitmap?.recycle();encoderBuffers.remove() };worker.shutdown()
   super.onDetachedFromWindow()
  }
- fun setEndpoint(value:String) { if(endpoint==value)return;endpoint=value;generation++;ready=false;socket?.close(1000,"Reconnect");socket=null;frameCount=0;if(isAttachedToWindow&&value.isNotEmpty())connect() else status("idle","Prêt à connecter") }
- fun setFacing(value:String) { val next=value=="front";if(next!=front){front=next;if(isAttachedToWindow)bindCamera()} }
+ fun setEndpoint(value:String) { if(endpoint==value)return;endpoint=value;generation++;ready=false;socket?.close(1000,"Reconnect");socket=null;frameCount=0;if(isAttachedToWindow&&value.isNotEmpty())connect() }
+ fun setFacing(value:String) { val next=value=="front";if(next!=front){front=next;if(front)torch=false;if(isAttachedToWindow)bindCamera()} }
  fun setTorch(value:Boolean) { torch=value;camera?.let { if(it.cameraInfo.hasFlashUnit())it.cameraControl.enableTorch(value) } }
  fun setZoom(value:Float) { zoom=value.coerceIn(0f,1f);camera?.cameraControl?.setLinearZoom(zoom) }
  private fun connect() {
@@ -60,7 +68,7 @@ class UltracamCameraView(context: Context, appContext: AppContext) : ExpoView(co
    status("connecting","Connexion au Studio…")
    socket=client.newWebSocket(request,object:WebSocketListener(){
     override fun onOpen(ws:WebSocket,response:Response){ if(current!=generation){ws.close(1000,"Stale");return};ready=true;ws.send(JSONObject().put("type","hello").put("name",android.os.Build.MODEL).put("platform","android").put("version",1).toString());status("connected","Connecté au Studio") }
-    override fun onMessage(ws:WebSocket,text:String){ if(current!=generation)return;try { val j=JSONObject(text);post { when(j.optString("type")){"torch"->setTorch(j.optBoolean("value"));"zoom"->setZoom(j.optDouble("value").toFloat());"facing"->setFacing(j.optString("value"));"fps"->{fps=j.optInt("value",15).coerceIn(5,30)};"exposure"->{camera?.let { c->val range=c.cameraInfo.exposureState.exposureCompensationRange;c.cameraControl.setExposureCompensationIndex(j.optInt("value").coerceIn(range.lower,range.upper)) }}} } }catch(_:Exception){} }
+    override fun onMessage(ws:WebSocket,text:String){ if(current!=generation)return;try { val j=JSONObject(text);post { if(current!=generation)return@post;when(j.optString("type")){"torch"->setTorch(j.optBoolean("value"));"zoom"->setZoom(j.optDouble("value").toFloat());"facing"->setFacing(j.optString("value"));"fps"->{fps=j.optInt("value",15).coerceIn(5,30)};"exposure"->{camera?.let { c->val range=c.cameraInfo.exposureState.exposureCompensationRange;c.cameraControl.setExposureCompensationIndex(j.optInt("value").coerceIn(range.lower,range.upper)) }}};onControls(mapOf("facing" to if(front) "front" else "back", "torch" to torch, "zoom" to zoom, "fps" to fps)) } }catch(_:Exception){} }
     override fun onFailure(ws:WebSocket,t:Throwable,response:Response?){ if(current==generation){ready=false;status("error","Connexion perdue : ${response?.code ?: t.javaClass.simpleName}. Reconnectez-vous.")} }
     override fun onClosed(ws:WebSocket,code:Int,reason:String){if(current==generation){ready=false;status("closed","Studio déconnecté")}}
     override fun onClosing(ws:WebSocket,code:Int,reason:String){ws.close(code,reason)}
@@ -85,20 +93,27 @@ class UltracamCameraView(context: Context, appContext: AppContext) : ExpoView(co
  }
  private fun encode(frame:ImageProxy) {
   val ws=socket ?: return
+  val current=generation
   val now=SystemClock.elapsedRealtime()
   if(!ready||now-lastFrame<1000/fps||ws.queueSize()>2_000_000)return
   lastFrame=now
   val plane=frame.planes[0]
-  val raw=Bitmap.createBitmap(frame.width,frame.height,Bitmap.Config.ARGB_8888)
-  val packed=java.nio.ByteBuffer.allocate(frame.width*frame.height*4)
-  val row=ByteArray(frame.width*4)
+  val buffers=checkNotNull(encoderBuffers.get())
+  if(buffers.bitmap?.width!=frame.width || buffers.bitmap?.height!=frame.height) {
+   buffers.bitmap?.recycle();buffers.bitmap=Bitmap.createBitmap(frame.width,frame.height,Bitmap.Config.ARGB_8888)
+   buffers.pixels=java.nio.ByteBuffer.allocate(frame.width*frame.height*4);buffers.row=ByteArray(frame.width*4)
+  }
+  val raw=buffers.bitmap!!
+  val packed=buffers.pixels!!;packed.clear()
+  val row=buffers.row
   for(y in 0 until frame.height){plane.buffer.position(y*plane.rowStride);plane.buffer.get(row);packed.put(row)}
   packed.rewind();raw.copyPixelsFromBuffer(packed)
   val matrix=Matrix().apply{postRotate(frame.imageInfo.rotationDegrees.toFloat())}
   val image=Bitmap.createBitmap(raw,0,0,frame.width,frame.height,matrix,true)
-  val output=ByteArrayOutputStream();image.compress(Bitmap.CompressFormat.JPEG,quality,output)
-  if(image!==raw)image.recycle();raw.recycle()
-  if(ws.send(output.toByteArray().toByteString()))frameCount++
+  buffers.jpeg.reset()
+  try { image.compress(Bitmap.CompressFormat.JPEG,quality,buffers.jpeg) } finally { if(image!==raw)image.recycle() }
+  if(current!=generation || ws!==socket || !ready)return
+  if(ws.send(buffers.jpeg.toByteArray().toByteString()))frameCount++
   if(now-lastStatus>1000){lastStatus=now;status("streaming","En direct · caméra active")}
  }
 }

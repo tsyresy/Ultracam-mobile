@@ -1,10 +1,58 @@
 {
- "expo": {
-  "name":"Ultracam Remote Mobile","slug":"ultracam-remote-mobile","version":"0.1.0","orientation":"default","scheme":"ultracam","userInterfaceStyle":"dark",
-  "icon":"./Ultracam-Mobile-logo.png","splash":{"image":"./Ultracam Mobile splash.png","resizeMode":"contain","backgroundColor":"#10131a"},
-  "newArchEnabled":false,
-  "ios":{"supportsTablet":true,"bundleIdentifier":"app.ultracam.mobile","googleServicesFile":"./GoogleService-Info.plist","infoPlist":{"NSLocalNetworkUsageDescription":"Relier votre caméra à Ultracam Studio sur votre réseau local.","NSAppTransportSecurity":{"NSAllowsLocalNetworking":true,"NSAllowsArbitraryLoads":true}}},
-  "android":{"package":"app.ultracam.mobile","googleServicesFile":"./google-services.json","permissions":["CAMERA","INTERNET","ACCESS_NETWORK_STATE"],"adaptiveIcon":{"foregroundImage":"./Ultracam-Mobile-logo.png","backgroundColor":"#10131a"}},
-  "plugins":[["expo-camera",{"cameraPermission":"Autoriser Ultracam à transmettre la caméra à votre ordinateur.","recordAudioAndroid":false}],"./plugins/withLocalNetwork.js"]
- }
+  "expo": {
+    "name": "Ultracam Remote Mobile",
+    "slug": "ultracam-mobile",
+    "version": "0.1.1",
+    "orientation": "default",
+    "scheme": "ultracam",
+    "userInterfaceStyle": "dark",
+    "icon": "./Ultracam-Mobile-logo.png",
+    "splash": {
+      "image": "./Ultracam Mobile splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#10131a"
+    },
+    "newArchEnabled": false,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.ultracam.mobile",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "Relier votre cam\u00e9ra \u00e0 Ultracam Studio sur votre r\u00e9seau local.",
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true,
+          "NSAllowsArbitraryLoads": true
+        }
+      }
+    },
+    "android": {
+      "package": "app.ultracam.mobile",
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "CAMERA",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./Ultracam-Mobile-logo.png",
+        "backgroundColor": "#10131a"
+      }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Autoriser Ultracam \u00e0 transmettre la cam\u00e9ra \u00e0 votre ordinateur.",
+          "recordAudioAndroid": false
+        }
+      ],
+      "./plugins/withLocalNetwork.js"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b24f0cf4-4133-4077-94b5-9e3c53376ed7"
+      }
+    },
+    "owner": "tsyresy"
+  }
 }

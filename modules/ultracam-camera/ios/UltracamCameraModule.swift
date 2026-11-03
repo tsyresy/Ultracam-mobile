@@ -8,7 +8,7 @@ public class UltracamCameraModule: Module {
  public func definition() -> ModuleDefinition {
   Name("UltracamCamera")
   View(UltracamCameraView.self) {
-   Events("onStatus")
+   Events("onStatus", "onControls")
    Prop("url") { (v: UltracamCameraView, value: String) in v.setEndpoint(value) }
    Prop("facing") { (v: UltracamCameraView, value: String) in v.setFacing(value) }
    Prop("torch") { (v: UltracamCameraView, value: Bool) in v.setTorch(value) }
@@ -20,6 +20,7 @@ public class UltracamCameraModule: Module {
 }
 class UltracamCameraView: ExpoView, AVCaptureVideoDataOutputSampleBufferDelegate {
  let onStatus = EventDispatcher()
+ let onControls = EventDispatcher()
  private let capture = AVCaptureSession()
  private let captureQueue = DispatchQueue(label:"app.ultracam.capture")
  private let context = CIContext()
@@ -65,6 +66,9 @@ class UltracamCameraView: ExpoView, AVCaptureVideoDataOutputSampleBufferDelegate
    case .success(let message):
     if case .string(let text)=message,let data=text.data(using:.utf8),let j=(try? JSONSerialization.jsonObject(with:data)) as? [String:Any] {
      switch j["type"] as? String {case "torch":self.setTorch(j["value"] as? Bool ?? false);case "zoom":self.setZoom(j["value"] as? Double ?? 0);case "facing":self.setFacing(j["value"] as? String ?? "back");case "fps":self.fps=max(5,min(30,j["value"] as? Int ?? 15));default:break}
+     if let type=j["type"] as? String, let value=j["value"], ["torch","zoom","facing","fps"].contains(type) {
+      DispatchQueue.main.async { guard self.socket===ws else{return};self.onControls([type:value]) }
+     }
     };self.receive(ws)
   }
  } }

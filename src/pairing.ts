@@ -8,3 +8,14 @@ export function parsePairing(value: string): string {
  if (/^[0-9.]+$/.test(match[2]) && (match[2].split('.').length !== 4 || match[2].split('.').some(part => !part || Number(part) > 255))) throw new Error('Invalid IPv4 address');
  return text;
 }
+
+export type Transport = 'wifi' | 'usb';
+/** ADB reverse terminates on the phone's loopback interface; retain the secret. */
+export function pairingForTransport(value: string, transport: Transport): string {
+ const endpoint = parsePairing(value);
+ if (transport === 'wifi') return endpoint;
+ if (!endpoint.startsWith('ws://') || !endpoint.includes(':49721/stream?')) {
+  throw new Error('USB requires the Studio local endpoint on port 49721');
+ }
+ return endpoint.replace(/^ws:\/\/[^:]+:/, 'ws://127.0.0.1:');
+}
