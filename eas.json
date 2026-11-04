@@ -1,9 +1,20 @@
 {
   "cli": {
+    "version": ">=12.5.1",
     "appVersionSource": "remote"
   },
   "build": {
+    "preview": {
+      "environment": "production",
+      "distribution": "internal",
+      "autoIncrement": true,
+      "credentialsSource": "local",
+      "android": {
+        "buildType": "apk"
+      }
+    },
     "production": {
+      "environment": "production",
       "distribution": "store",
       "autoIncrement": true,
       "credentialsSource": "local",

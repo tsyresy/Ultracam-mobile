@@ -1,5 +1,15 @@
 # Historique des mises à jour
 
+## 0.1.2 — 2026-11-04 — Correctif caméra Android local
+
+- Correction de l’aperçu noir : les demandes de mesure et de placement de la surface CameraX sont désormais prises en charge par la vue Expo (`shouldUseAndroidLayout`).
+- Aperçu en mode compatible TextureView avec dimensions explicites pour son conteneur.
+- Défaut reproduit sur Xiaomi M2007J17C : ouverture caméra suivie d’un timeout de surface après cinq secondes, même sans scanner le QR.
+- APK local code 9 installé sans suppression des données ; retour de l’aperçu confirmé sur le téléphone.
+- Transmission USB réelle confirmée après scan : plus de 250 images reçues sans déconnexion.
+- Correction supplémentaire de la résolution : sélection explicite 16:9 ciblant 1920x1080, exclusion des tailles supérieures et repli vers une résolution inférieure. Le choix précédent produisait du 3000x3000 sur ce téléphone et environ 2,15 fps à JPEG 90 %.
+- Compilation release, TypeScript et tests d’appairage réussis. Second APK installé ; résolution et cadence après cette seconde correction en attente de mesure. Le démarrage automatique au branchement reste à implémenter ; 30 fps réels ne sont pas encore validés.
+
 ## 0.1.1 — 2026-11-03 — Sources préparées, non publiées
 
 ### Connexion et cohérence

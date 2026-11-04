@@ -2,7 +2,7 @@
   "expo": {
     "name": "Ultracam Remote Mobile",
     "slug": "ultracam-mobile",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "orientation": "default",
     "scheme": "ultracam",
     "userInterfaceStyle": "dark",

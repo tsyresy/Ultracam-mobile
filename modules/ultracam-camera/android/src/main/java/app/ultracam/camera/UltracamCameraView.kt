@@ -6,6 +6,9 @@ import android.graphics.Matrix
 import android.os.SystemClock
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
@@ -20,6 +23,9 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 class UltracamCameraView(context: Context, appContext: AppContext) : ExpoView(context, appContext) {
+ // PreviewView adds its rendering surface asynchronously. React Native otherwise
+ // suppresses that child's layout request, leaving CameraX waiting for a surface.
+ override val shouldUseAndroidLayout = true
  private val preview = PreviewView(context)
  private val onStatus by EventDispatcher()
  private val onControls by EventDispatcher()
@@ -48,7 +54,11 @@ class UltracamCameraView(context: Context, appContext: AppContext) : ExpoView(co
  private var lastStatus = 0L
  private var frameCount = 0
  @Volatile private var generation = 0
- init { preview.scaleType = PreviewView.ScaleType.FIT_CENTER; addView(preview) }
+ init {
+  preview.scaleType = PreviewView.ScaleType.FIT_CENTER
+  preview.implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+  addView(preview, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+ }
  override fun onLayout(changed: Boolean,l:Int,t:Int,r:Int,b:Int) { preview.layout(0,0,r-l,b-t) }
  private fun status(state:String,message:String) { val current=generation; post { if(current==generation && isAttachedToWindow) onStatus(mapOf("state" to state,"message" to message,"frames" to frameCount)) } }
  override fun onAttachedToWindow() { super.onAttachedToWindow(); if(worker.isShutdown) worker=Executors.newSingleThreadExecutor(); bindCamera(); if(endpoint.isNotEmpty()) connect() }
@@ -82,8 +92,16 @@ class UltracamCameraView(context: Context, appContext: AppContext) : ExpoView(co
    try {
     val p=future.get();provider=p
     analysis?.let{p.unbind(it)};previewUseCase?.let{p.unbind(it)}
-    val surface=Preview.Builder().build().also{it.setSurfaceProvider(preview.surfaceProvider)}
-    val stream=ImageAnalysis.Builder().setTargetResolution(android.util.Size(1280,720)).setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888).build()
+    // The legacy target size is interpreted relative to display rotation and can
+    // select a multi-megapixel square stream on portrait Xiaomi devices. Bound
+    // the sensor dimensions explicitly before CameraX negotiates its use cases.
+    val resolution=ResolutionSelector.Builder()
+     .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
+     .setResolutionStrategy(ResolutionStrategy(android.util.Size(1920,1080),ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER))
+     .setResolutionFilter { sizes, _ -> sizes.filter { maxOf(it.width,it.height)<=1920 && minOf(it.width,it.height)<=1080 } }
+     .build()
+    val surface=Preview.Builder().setResolutionSelector(resolution).build().also{it.setSurfaceProvider(preview.surfaceProvider)}
+    val stream=ImageAnalysis.Builder().setResolutionSelector(resolution).setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888).build()
     stream.setAnalyzer(worker){frame->try{encode(frame)}catch(_:Exception){status("error","Impossible de traiter cette image")}finally{frame.close()}}
     val owner=appContext.currentActivity as? LifecycleOwner ?: throw IllegalStateException("No lifecycle")
     val selector=if(front)CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
